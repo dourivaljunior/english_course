@@ -2,656 +2,150 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>AI Avatar - Converse em Inglês</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English AI Tutor - Demo</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #eef2f3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin: 0;
             padding: 20px;
         }
-
-        .container {
-            max-width: 600px;
-            width: 100%;
+        .card {
             background: white;
-            border-radius: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 20px;
-        }
-
-        .avatar-section {
-            text-align: center;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 20px;
             padding: 30px;
-            margin-bottom: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 450px;
+            width: 100%;
         }
-
-        #avatar-img {
-            width: 200px;
-            height: 200px;
+        #avatar-container {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+            background: #007bff;
             border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid white;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            cursor: pointer;
-        }
-
-        @keyframes speak {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        @keyframes listen {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.1) rotate(5deg); }
-        }
-
-        @keyframes think {
-            0%, 100% { opacity: 1; transform: translateY(0px); }
-            50% { opacity: 0.8; transform: translateY(-10px); }
-        }
-
-        .avatar-speaking { animation: speak 0.5s ease-in-out infinite; }
-        .avatar-listening { animation: listen 0.8s ease-in-out infinite; }
-        .avatar-thinking { animation: think 1s ease-in-out infinite; }
-
-        .status {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #666;
-            font-weight: bold;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #4CAF50;
-            margin-right: 8px;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        .chat-area {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 15px;
-            height: 300px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-        }
-
-        .message {
-            margin-bottom: 15px;
-            display: flex;
-            animation: fadeIn 0.3s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message.user { justify-content: flex-end; }
-        .message.ai { justify-content: flex-start; }
-
-        .message-content {
-            max-width: 70%;
-            padding: 10px 15px;
-            border-radius: 18px;
-            word-wrap: break-word;
-        }
-
-        .user .message-content {
-            background: #667eea;
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-
-        .ai .message-content {
-            background: white;
-            color: #333;
-            border: 1px solid #e0e0e0;
-            border-bottom-left-radius: 4px;
-        }
-
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        button {
-            flex: 1;
-            padding: 15px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: transform 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            transition: all 0.3s ease;
         }
-
-        #record-btn {
-            background: #ff4444;
-            color: white;
+        .speaking {
+            box-shadow: 0 0 20px #007bff;
+            animation: pulse 0.5s infinite;
         }
-
-        #record-btn.recording {
-            background: #cc0000;
-            animation: pulse 1s infinite;
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
         }
-
-        #clear-btn {
-            background: #6c757d;
-            color: white;
-        }
-
-        button:active { transform: scale(0.98); }
-
-        .text-input {
-            display: flex;
-            gap: 10px;
-        }
-
-        #text-input {
-            flex: 1;
+        svg { width: 80px; fill: white; }
+        input {
+            width: 100%;
             padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 14px;
-            outline: none;
-        }
-
-        #text-input:focus { border-color: #667eea; }
-
-        #send-btn {
-            background: #667eea;
-            color: white;
-            width: auto;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .info {
-            background: #e8f4fd;
-            border-radius: 10px;
-            padding: 10px;
-            margin-top: 15px;
-            font-size: 12px;
-            color: #0056b3;
-            text-align: center;
-        }
-
-        .error-banner {
-            background: #fee2e2;
-            border-left: 4px solid #dc2626;
-            padding: 10px;
-            margin-bottom: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
             border-radius: 8px;
-            font-size: 12px;
-            color: #991b1b;
-            display: none;
+            box-sizing: border-box;
         }
-
-        @media (max-width: 600px) {
-            .container { padding: 15px; }
-            #avatar-img { width: 150px; height: 150px; }
-            .message-content { max-width: 85%; }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 10px;
         }
+        #log { margin-top: 20px; font-size: 14px; color: #555; border-top: 1px solid #eee; padding-top: 15px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="avatar-section">
-            <img id="avatar-img" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Emma&backgroundColor=b6e3f4" alt="Avatar">
-            <div class="status">
-                <span class="status-indicator"></span>
-                <span id="status-text">Pronto para conversar</span>
-            </div>
-        </div>
 
-        <div class="error-banner" id="error-banner">
-            ⚠️ <span id="error-message"></span>
-        </div>
-
-        <div class="chat-area" id="chat-area">
-            <div class="message ai">
-                <div class="message-content">
-                    👋 Hello! I'm Emma. Click the microphone and speak in English!
-                </div>
-            </div>
-        </div>
-
-        <div class="controls">
-            <button id="record-btn">🎤 Speak Now</button>
-            <button id="clear-btn">🗑️ Clear Chat</button>
-        </div>
-
-        <div class="text-input">
-            <input type="text" id="text-input" placeholder="Or type your message in English...">
-            <button id="send-btn">Send 📤</button>
-        </div>
-
-        <div class="info">
-            🔧 Usando auto-descoberta de modelos | <span id="model-status">Detectando modelo disponível...</span>
-        </div>
+<div class="card">
+    <h2>English Tutor AI</h2>
+    <p style="font-size: 0.8rem; color: #888;">Projeto Educacional</p>
+    
+    <div id="avatar-container">
+        <svg viewBox="0 0 24 24"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8 S16.41,20,12,20z M12,13c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,13,12,13z"/></svg>
     </div>
+    
+    <input type="password" id="apiKey" placeholder="AIzaSyA-XrmUQwhEE3RkFy0GkXPu5LXoN6-_iXU">
+    <button id="talkBtn">Segurar para Falar (Inglês)</button>
+    
+    <div id="log">Aguardando...</div>
+</div>
 
-    <script>
-        // ============================================================
-        // COLE SUA CHAVE DA API DO GOOGLE AQUI
-        // Obtenha em: https://aistudio.google.com/apikey
-        // ============================================================
-        const GEMINI_API_KEY = 'AIzaSyA-XrmUQwhEE3RkFy0GkXPu5LXoN6-_iXU';
+<script>
+    const talkBtn = document.getElementById('talkBtn');
+    const log = document.getElementById('log');
+    const avatar = document.getElementById('avatar-container');
+    const apiKeyField = document.getElementById('apiKey');
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+    
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+
+        talkBtn.onmousedown = () => {
+            if(!apiKeyField.value) return alert("Insira sua API Key!");
+            recognition.start();
+            log.innerText = "Ouvindo...";
+        };
+
+        talkBtn.onmouseup = () => {
+            recognition.stop();
+            log.innerText = "Processando...";
+        };
+
+        recognition.onresult = async (event) => {
+            const text = event.results[0][0].transcript;
+            log.innerHTML = "<b>Você:</b> " + text;
+            await askGemini(text);
+        };
+    }
+
+    async function askGemini(prompt) {
+        const key = apiKeyField.value;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
         
-        // Modelos que o Google disponibiliza para novas contas (Março 2026)
-        // Fonte: https://ai.google.dev/gemini-api/docs/models
-        const CANDIDATE_MODELS = [
-            'gemini-2.5-flash',           // Mais recente, recomendado pelo Google
-            'gemini-2.5-flash-lite',      // Versão mais leve
-            'gemini-2.5-pro',             // Mais potente (pode ter limites)
-            'gemini-3.1-flash-preview',   // Prévia da versão 3.1
-            'gemini-3.1-flash-lite-preview' // Versão leve da 3.1
-        ];
-        
-        let activeModel = null;
-        let modelDetectionComplete = false;
-        let isRecording = false;
-        let recognition = null;
-        let conversationHistory = [];
-
-        const avatarImg = document.getElementById('avatar-img');
-        const statusText = document.getElementById('status-text');
-        const recordBtn = document.getElementById('record-btn');
-        const clearBtn = document.getElementById('clear-btn');
-        const sendBtn = document.getElementById('send-btn');
-        const textInput = document.getElementById('text-input');
-        const chatArea = document.getElementById('chat-area');
-        const errorBanner = document.getElementById('error-banner');
-        const errorMessageSpan = document.getElementById('error-message');
-        const modelStatusSpan = document.getElementById('model-status');
-
-        function showError(message) {
-            errorMessageSpan.textContent = message;
-            errorBanner.style.display = 'block';
-            setTimeout(() => {
-                errorBanner.style.display = 'none';
-            }, 8000);
-        }
-
-        function addMessage(text, isUser) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
-            messageDiv.innerHTML = `<div class="message-content">${escapeHtml(text)}</div>`;
-            chatArea.appendChild(messageDiv);
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function showLoading() {
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'message ai';
-            loadingDiv.id = 'loading-message';
-            loadingDiv.innerHTML = `<div class="message-content"><div class="loading"></div> Thinking...</div>`;
-            chatArea.appendChild(loadingDiv);
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
-
-        function hideLoading() {
-            const loading = document.getElementById('loading-message');
-            if (loading) loading.remove();
-        }
-
-        function animateAvatar(action) {
-            avatarImg.classList.remove('avatar-speaking', 'avatar-listening', 'avatar-thinking');
-            switch(action) {
-                case 'speaking':
-                    avatarImg.classList.add('avatar-speaking');
-                    statusText.innerText = '🤖 Speaking...';
-                    break;
-                case 'listening':
-                    avatarImg.classList.add('avatar-listening');
-                    statusText.innerText = '🎧 Listening...';
-                    break;
-                case 'thinking':
-                    avatarImg.classList.add('avatar-thinking');
-                    statusText.innerText = '💭 Thinking...';
-                    break;
-                default:
-                    statusText.innerText = '✅ Ready';
-            }
-        }
-
-        function speakText(text) {
-            return new Promise((resolve) => {
-                if ('speechSynthesis' in window) {
-                    window.speechSynthesis.cancel();
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = 'en-US';
-                    utterance.rate = 0.9;
-                    utterance.pitch = 1.0;
-                    utterance.onstart = () => animateAvatar('speaking');
-                    utterance.onend = () => { animateAvatar('ready'); resolve(); };
-                    utterance.onerror = () => { animateAvatar('ready'); resolve(); };
-                    window.speechSynthesis.speak(utterance);
-                } else {
-                    resolve();
-                }
+        try {
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: "You are a friendly English teacher. Answer briefly in English: " + prompt }]}]
+                })
             });
+            const data = await resp.json();
+            const reply = data.candidates[0].content.parts[0].text;
+            speak(reply);
+        } catch (e) {
+            log.innerText = "Erro na API. Verifique sua chave.";
         }
+    }
 
-        // ============================================================
-        // FUNÇÃO PARA DETECTAR MODELO DISPONÍVEL
-        // Chama a API ListModels do Google para descobrir o que funciona
-        // ============================================================
-        async function detectAvailableModel() {
-            if (GEMINI_API_KEY === 'COLE_SUA_CHAVE_AQUI') {
-                modelStatusSpan.textContent = '⚠️ Configure sua chave API';
-                return null;
-            }
-
-            modelStatusSpan.textContent = '🔍 Detectando modelo disponível...';
-            
-            // Primeiro, vamos tentar listar os modelos via API (melhor método)
-            try {
-                const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`;
-                const response = await fetch(listUrl);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const availableModels = data.models || [];
-                    
-                    // Filtra modelos que suportam generateContent
-                    const validModels = availableModels.filter(m => 
-                        m.supportedActions?.includes('generateContent') &&
-                        !m.name.includes('1.5') &&  // Exclui 1.5 (descontinuado)
-                        !m.name.includes('2.0')     // Exclui 2.0 (bloqueado para novos usuários)
-                    );
-                    
-                    if (validModels.length > 0) {
-                        // Pega o modelo mais recente (geralmente o primeiro)
-                        const bestModel = validModels[0].name;
-                        modelStatusSpan.textContent = `✅ Usando ${bestModel}`;
-                        console.log('Modelos disponíveis via API:', validModels.map(m => m.name));
-                        return bestModel;
-                    }
-                }
-            } catch (error) {
-                console.warn('ListModels falhou, tentando fallback manual:', error);
-            }
-            
-            // Fallback: testar modelos manualmente (se ListModels falhar)
-            for (const model of CANDIDATE_MODELS) {
-                try {
-                    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-                    const testResponse = await fetch(testUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: "Say 'OK' if you can hear me." }] }],
-                            generationConfig: { maxOutputTokens: 10 }
-                        })
-                    });
-                    
-                    if (testResponse.ok) {
-                        modelStatusSpan.textContent = `✅ Usando ${model}`;
-                        console.log(`Modelo encontrado: ${model}`);
-                        return model;
-                    }
-                    
-                    const errorData = await testResponse.json();
-                    console.log(`Modelo ${model} falhou:`, errorData.error?.message);
-                    
-                } catch (error) {
-                    console.log(`Erro ao testar ${model}:`, error.message);
-                }
-            }
-            
-            modelStatusSpan.textContent = '❌ Nenhum modelo disponível';
-            showError('Nenhum modelo Gemini disponível para sua conta. Verifique sua chave API em aistudio.google.com');
-            return null;
-        }
-
-        // ============================================================
-        // FUNÇÃO PRINCIPAL - USANDO O MODELO DETECTADO
-        // ============================================================
-        async function callGeminiAI(message) {
-            if (GEMINI_API_KEY === 'COLE_SUA_CHAVE_AQUI') {
-                return "⚠️ Please configure your Google API Key first. Get it for free at aistudio.google.com/apikey";
-            }
-            
-            // Se ainda não detectou o modelo, tenta detectar
-            if (!activeModel && !modelDetectionComplete) {
-                activeModel = await detectAvailableModel();
-                modelDetectionComplete = true;
-            }
-            
-            if (!activeModel) {
-                return "⚠️ No AI model available. Please check your API key at aistudio.google.com";
-            }
-            
-            // Adiciona à história da conversa para contexto
-            conversationHistory.push({ role: "user", parts: [{ text: message }] });
-            
-            // Mantém apenas as últimas 10 mensagens para não exceder limite
-            if (conversationHistory.length > 10) {
-                conversationHistory = conversationHistory.slice(-10);
-            }
-            
-            try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${GEMINI_API_KEY}`;
-                
-                console.log(`📡 Usando modelo: ${activeModel}`);
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: `You are Emma, a friendly English conversation partner. Keep responses VERY SHORT (maximum 2 sentences). Be natural and helpful. Respond to this: ${message}`
-                            }]
-                        }],
-                        generationConfig: {
-                            temperature: 0.7,
-                            maxOutputTokens: 100,
-                            topP: 0.9
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    const errorMsg = errorData.error?.message || '';
-                    
-                    console.error('API Error:', response.status, errorMsg);
-                    
-                    // Se o modelo falhou, tenta redetetar
-                    if (errorMsg.includes('no longer available') || errorMsg.includes('not found')) {
-                        console.log('Modelo expirou, redetectando...');
-                        activeModel = null;
-                        modelDetectionComplete = false;
-                        activeModel = await detectAvailableModel();
-                        
-                        if (activeModel) {
-                            // Tenta novamente com o novo modelo
-                            return callGeminiAI(message);
-                        }
-                    }
-                    
-                    if (errorMsg.includes('API key')) {
-                        return "❌ Invalid API Key. Please check your key at aistudio.google.com/apikey";
-                    }
-                    
-                    return `⚠️ Error: ${errorMsg || 'AI service unavailable'}`;
-                }
-
-                const data = await response.json();
-                const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                
-                if (reply) {
-                    // Adiciona resposta à história
-                    conversationHistory.push({ role: "model", parts: [{ text: reply }] });
-                    return reply;
-                }
-                
-                return "I'm not sure how to respond. Could you say that differently?";
-
-            } catch (error) {
-                console.error('Network Error:', error);
-                return "⚠️ Network error. Please check your internet connection.";
-            }
-        }
-
-        async function processMessage(userMessage) {
-            if (!userMessage.trim()) return;
-
-            if (recognition && isRecording) recognition.stop();
-            
-            addMessage(userMessage, true);
-            showLoading();
-            animateAvatar('thinking');
-            
-            const aiResponse = await callGeminiAI(userMessage);
-            hideLoading();
-            addMessage(aiResponse, false);
-            await speakText(aiResponse);
-        }
-
-        function setupSpeechRecognition() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                addMessage("⚠️ Speech recognition not supported. Please use Chrome browser.", false);
-                recordBtn.disabled = true;
-                return;
-            }
-            
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.lang = 'en-US';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            
-            recognition.onstart = () => {
-                isRecording = true;
-                recordBtn.innerHTML = '🔴 Recording...';
-                recordBtn.classList.add('recording');
-                animateAvatar('listening');
-                statusText.innerText = '🎙️ Speak now...';
-            };
-            
-            recognition.onend = () => {
-                isRecording = false;
-                recordBtn.innerHTML = '🎤 Speak Now';
-                recordBtn.classList.remove('recording');
-                if (statusText.innerText !== '🤖 Speaking...') animateAvatar('ready');
-            };
-            
-            recognition.onresult = (event) => {
-                const userMessage = event.results[0][0].transcript;
-                processMessage(userMessage);
-            };
-            
-            recognition.onerror = (event) => {
-                if (event.error === 'not-allowed') {
-                    addMessage("⚠️ Microphone access denied. Please allow microphone permissions.", false);
-                }
-                isRecording = false;
-                recordBtn.innerHTML = '🎤 Speak Now';
-                recordBtn.classList.remove('recording');
-                animateAvatar('ready');
-            };
-        }
-
-        // Inicialização
-        async function init() {
-            setupSpeechRecognition();
-            
-            if (GEMINI_API_KEY !== 'COLE_SUA_CHAVE_AQUI') {
-                // Tenta detectar o modelo na inicialização
-                activeModel = await detectAvailableModel();
-                modelDetectionComplete = true;
-                
-                if (activeModel) {
-                    addMessage(`✨ Connected! Using model: ${activeModel}. You can now speak in English!`, false);
-                } else {
-                    addMessage("⚠️ Could not detect any available AI model. Please check your API key.", false);
-                }
-            } else {
-                addMessage("⚠️ Please configure your Google API Key. Get it from aistudio.google.com/apikey", false);
-            }
-            
-            console.log('🚀 App ready!');
-        }
-        
-        // Event listeners
-        recordBtn.addEventListener('click', () => {
-            if (recognition) {
-                if (isRecording) recognition.stop();
-                else recognition.start();
-            }
-        });
-        
-        sendBtn.addEventListener('click', () => {
-            const message = textInput.value.trim();
-            if (message) {
-                processMessage(message);
-                textInput.value = '';
-            }
-        });
-        
-        textInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendBtn.click();
-        });
-        
-        clearBtn.addEventListener('click', () => {
-            chatArea.innerHTML = '';
-            conversationHistory = [];
-            addMessage("✨ Chat cleared! Ready to help you practice English.", false);
-        });
-        
-        init();
-    </script>
+    function speak(text) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.onstart = () => avatar.classList.add('speaking');
+        utterance.onend = () => {
+            avatar.classList.remove('speaking');
+            log.innerHTML += "<br><b>Tutor:</b> " + text;
+        };
+        window.speechSynthesis.speak(utterance);
+    }
+</script>
 </body>
 </html>
