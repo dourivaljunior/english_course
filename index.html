@@ -1,3 +1,805 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>AI Avatar Emma - Converse em Inglês</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 650px;
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 40px;
+            padding: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Avatar Section */
+        .avatar-section {
+            text-align: center;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 30px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        #avatar-img {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #38bdf8;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        /* Animações do Avatar */
+        @keyframes speak {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 #38bdf8; }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(56, 189, 248, 0); }
+        }
+
+        @keyframes listen {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.02) rotate(-3deg); }
+            75% { transform: scale(1.02) rotate(3deg); }
+        }
+
+        @keyframes think {
+            0%, 100% { opacity: 1; transform: translateY(0px); }
+            50% { opacity: 0.7; transform: translateY(-5px); }
+        }
+
+        .avatar-speaking { animation: speak 0.6s ease-in-out infinite; }
+        .avatar-listening { animation: listen 0.8s ease-in-out infinite; }
+        .avatar-thinking { animation: think 1s ease-in-out infinite; }
+
+        .status {
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        .status-text {
+            color: #cbd5e1;
+        }
+
+        /* Config Section */
+        .config-section {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .config-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #38bdf8;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .file-input-wrapper input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 14px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-label:hover {
+            border-color: #38bdf8;
+            background: #1e293b;
+        }
+
+        .file-label span:first-child {
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .file-label span:last-child {
+            color: #38bdf8;
+            font-size: 12px;
+        }
+
+        .key-status {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #22c55e;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            background: #0f172a;
+            border-radius: 20px;
+            padding: 16px;
+            height: 280px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+
+        .chat-area::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .chat-area::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+
+        .chat-area::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 10px;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user { justify-content: flex-end; }
+        .message.ai { justify-content: flex-start; }
+
+        .message-content {
+            max-width: 80%;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .user .message-content {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai .message-content {
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: #e2e8f0;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #475569;
+        }
+
+        /* Text Input */
+        .input-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 14px 18px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 50px;
+            font-size: 14px;
+            color: white;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #38bdf8;
+        }
+
+        .input-group input::placeholder {
+            color: #64748b;
+        }
+
+        .input-group button {
+            width: auto;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        /* Loading */
+        .loading-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+
+        .loading-dots span {
+            width: 6px;
+            height: 6px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .info {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        @media (max-width: 550px) {
+            .container { padding: 16px; }
+            #avatar-img { width: 120px; height: 120px; }
+            .message-content { max-width: 90%; }
+            .btn { padding: 12px; font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Avatar Section -->
+        <div class="avatar-section">
+            <div class="avatar-wrapper">
+                <img id="avatar-img" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Emma&backgroundColor=1e293b&hairColor=2c1e0f&skinColor=f2d5c4&accessories=round&clothing=blazer&clothingColor=3b82f6&eyes=happy&eyebrows=raised&mouth=smile" alt="Avatar Emma">
+            </div>
+            <div class="status">
+                <div class="status-dot"></div>
+                <span class="status-text" id="status-text">Aguardando configuração</span>
+            </div>
+        </div>
+
+        <!-- Config Section -->
+        <div class="config-section">
+            <div class="config-title">
+                🔑 <span>API Key do Google Gemini</span>
+            </div>
+            <div class="file-input-wrapper">
+                <div class="file-label" id="file-label">
+                    <span>📄 Selecionar arquivo key.txt</span>
+                    <span>▼</span>
+                </div>
+                <input type="file" id="keyFile" accept=".txt">
+            </div>
+            <div id="key-status" class="key-status" style="display: none;">
+                ✅ <span>Chave carregada com sucesso!</span>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area" id="chat-area">
+            <div class="message ai">
+                <div class="message-content">
+                    👋 Hello! I'm Emma.<br>
+                    Please upload your API key file above, then click START to begin.
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn btn-primary" id="start-btn" disabled>
+                ▶️ Iniciar Conversa
+            </button>
+            <button class="btn btn-danger" id="stop-btn" disabled>
+                ⏹️ Parar Conversa
+            </button>
+            <button class="btn btn-secondary" id="clear-btn">
+                🗑️ Limpar
+            </button>
+        </div>
+
+        <!-- Text Input -->
+        <div class="input-group">
+            <input type="text" id="text-input" placeholder="Type your message in English..." disabled>
+            <button class="btn" id="send-btn" disabled>Enviar</button>
+        </div>
+
+        <div class="info">
+            💡 Dica: Fale em inglês. Emma responde de forma natural e curta (máx. 2 frases).
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // CONFIGURAÇÃO - Baseado no código que funcionou
+        // ============================================================
+        const MODEL = 'gemini-2.5-flash';  // ✅ Modelo correto que funciona
+        let apiKey = '';
+        let isConversationActive = false;
+        let recognition = null;
+        let isRecording = false;
+        let currentUtterance = null;
+
+        // Elementos DOM
+        const avatarImg = document.getElementById('avatar-img');
+        const statusText = document.getElementById('status-text');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const sendBtn = document.getElementById('send-btn');
+        const textInput = document.getElementById('text-input');
+        const chatArea = document.getElementById('chat-area');
+        const keyFileInput = document.getElementById('keyFile');
+        const keyStatus = document.getElementById('key-status');
+
+        // ============================================================
+        // FUNÇÕES DE INTERFACE
+        // ============================================================
+        function addMessage(text, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+            messageDiv.innerHTML = `<div class="message-content">${escapeHtml(text)}</div>`;
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            return messageDiv;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message ai';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="message-content">
+                    <div class="loading-dots">
+                        <span>●</span><span>●</span><span>●</span>
+                    </div>
+                </div>
+            `;
+            chatArea.appendChild(typingDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+        }
+
+        function animateAvatar(action) {
+            avatarImg.classList.remove('avatar-speaking', 'avatar-listening', 'avatar-thinking');
+            
+            switch(action) {
+                case 'speaking':
+                    avatarImg.classList.add('avatar-speaking');
+                    statusText.innerText = 'Speaking...';
+                    break;
+                case 'listening':
+                    avatarImg.classList.add('avatar-listening');
+                    statusText.innerText = 'Listening...';
+                    break;
+                case 'thinking':
+                    avatarImg.classList.add('avatar-thinking');
+                    statusText.innerText = 'Thinking...';
+                    break;
+                default:
+                    statusText.innerText = isConversationActive ? 'Ready' : 'Stopped';
+            }
+        }
+
+        function speakText(text) {
+            return new Promise((resolve) => {
+                if (!isConversationActive) {
+                    resolve();
+                    return;
+                }
+                
+                if ('speechSynthesis' in window) {
+                    if (currentUtterance) {
+                        window.speechSynthesis.cancel();
+                    }
+                    
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-US';
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 1;
+                    
+                    utterance.onstart = () => animateAvatar('speaking');
+                    utterance.onend = () => {
+                        animateAvatar('ready');
+                        currentUtterance = null;
+                        resolve();
+                    };
+                    utterance.onerror = () => {
+                        animateAvatar('ready');
+                        currentUtterance = null;
+                        resolve();
+                    };
+                    
+                    currentUtterance = utterance;
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    resolve();
+                }
+            });
+        }
+
+        // ============================================================
+        // FUNÇÃO PRINCIPA - API GEMINI (baseada no código que funcionou!)
+        // ============================================================
+        async function callGeminiAPI(message) {
+            if (!apiKey) {
+                return "⚠️ Please upload your API key file first.";
+            }
+
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ 
+                            parts: [{ 
+                                text: `You are Emma, a friendly English conversation partner. Keep responses VERY SHORT (maximum 2 sentences). Be natural and helpful. Respond to: ${message}` 
+                            }] 
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (reply) {
+                        return reply;
+                    }
+                    return "I'm not sure how to respond to that.";
+                } else {
+                    console.error('API Error:', data);
+                    const errorMsg = data.error?.message || 'Unknown error';
+                    
+                    if (errorMsg.includes('API key')) {
+                        return "❌ Invalid API Key. Please check your key file.";
+                    }
+                    if (errorMsg.includes('quota')) {
+                        return "⚠️ Quota exceeded. Please wait a moment or use another key.";
+                    }
+                    return `❌ Error: ${errorMsg}`;
+                }
+
+            } catch (error) {
+                console.error('Network Error:', error);
+                return "⚠️ Network error. Please check your connection.";
+            }
+        }
+
+        async function processMessage(userMessage) {
+            if (!userMessage.trim()) return;
+            if (!isConversationActive) return;
+
+            // Para gravação se estiver ativa
+            if (recognition && isRecording) {
+                recognition.stop();
+            }
+
+            addMessage(userMessage, true);
+            showTypingIndicator();
+            animateAvatar('thinking');
+
+            const aiResponse = await callGeminiAPI(userMessage);
+            
+            hideTypingIndicator();
+            addMessage(aiResponse, false);
+            await speakText(aiResponse);
+        }
+
+        // ============================================================
+        // RECONHECIMENTO DE VOZ (Web Speech API)
+        // ============================================================
+        function setupSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                addMessage("⚠️ Speech recognition not supported. Please use Chrome browser.", false);
+                return null;
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recog = new SpeechRecognition();
+            recog.lang = 'en-US';
+            recog.continuous = true;
+            recog.interimResults = false;
+            recog.maxAlternatives = 1;
+            
+            recog.onstart = () => {
+                isRecording = true;
+                animateAvatar('listening');
+                statusText.innerText = '🎙️ Listening...';
+            };
+            
+            recog.onend = () => {
+                isRecording = false;
+                if (isConversationActive) {
+                    animateAvatar('ready');
+                    statusText.innerText = 'Ready';
+                }
+            };
+            
+            recog.onresult = (event) => {
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        const userMessage = event.results[i][0].transcript;
+                        if (userMessage && userMessage.trim()) {
+                            processMessage(userMessage);
+                        }
+                    }
+                }
+            };
+            
+            recog.onerror = (event) => {
+                console.error('Speech error:', event.error);
+                if (event.error === 'not-allowed') {
+                    addMessage("⚠️ Please allow microphone access to use voice input.", false);
+                }
+                isRecording = false;
+                if (isConversationActive) {
+                    animateAvatar('ready');
+                    statusText.innerText = 'Ready (mic error)';
+                }
+            };
+            
+            return recog;
+        }
+
+        // ============================================================
+        // CONTROLES DE CONVERSA
+        // ============================================================
+        function startConversation() {
+            if (!apiKey) {
+                addMessage("⚠️ Please upload your API key file first.", false);
+                return;
+            }
+            
+            isConversationActive = true;
+            
+            // Inicializa reconhecimento de voz se ainda não existe
+            if (!recognition) {
+                recognition = setupSpeechRecognition();
+            }
+            
+            // Ativa microfone
+            if (recognition) {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.log('Recognition already started or error:', e);
+                }
+            }
+            
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            sendBtn.disabled = false;
+            textInput.disabled = false;
+            animateAvatar('ready');
+            statusText.innerText = 'Ready - Speaking in English';
+            addMessage("🎤 Conversation started! Speak in English or type your message.", false);
+        }
+
+        function stopConversation() {
+            isConversationActive = false;
+            
+            // Para o reconhecimento de voz
+            if (recognition && isRecording) {
+                try {
+                    recognition.stop();
+                } catch (e) {}
+            }
+            
+            // Para qualquer fala em andamento
+            if (currentUtterance) {
+                window.speechSynthesis.cancel();
+                currentUtterance = null;
+            }
+            
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            sendBtn.disabled = true;
+            textInput.disabled = true;
+            animateAvatar('ready');
+            statusText.innerText = 'Stopped';
+            addMessage("⏹️ Conversation stopped. Click START to begin again.", false);
+        }
+
+        function clearChat() {
+            chatArea.innerHTML = '';
+            addMessage("✨ Chat cleared! Ready to continue.", false);
+        }
+
+        // ============================================================
+        // CARREGAR CHAVE DO ARQUIVO .txt
+        // ============================================================
+        function loadKeyFromFile(file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                let key = ev.target.result.trim();
+                // Remove caracteres indesejados
+                key = key.replace(/[\n\r\t\s]/g, '');
+                
+                if (key && key.startsWith('AIza')) {
+                    apiKey = key;
+                    keyStatus.style.display = 'flex';
+                    startBtn.disabled = false;
+                    addMessage("✅ API Key loaded successfully! Click START to begin.", false);
+                    console.log('✅ Chave carregada com sucesso');
+                } else {
+                    apiKey = '';
+                    keyStatus.style.display = 'none';
+                    startBtn.disabled = true;
+                    addMessage("❌ Invalid API Key. Please make sure your key.txt contains a valid Google API key starting with 'AIza'.", false);
+                }
+            };
+            reader.onerror = () => {
+                addMessage("❌ Error reading file. Please try again.", false);
+            };
+            reader.readAsText(file);
+        }
+
+        // ============================================================
+        // EVENT LISTENERS
+        // ============================================================
+        keyFileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                loadKeyFromFile(e.target.files[0]);
+            }
+        });
+
+        startBtn.addEventListener('click', startConversation);
+        stopBtn.addEventListener('click', stopConversation);
+        clearBtn.addEventListener('click', clearChat);
+
+        sendBtn.addEventListener('click', () => {
+            if (!isConversationActive) {
+                addMessage("⚠️ Please click START to begin the conversation.", false);
+                return;
+            }
+            const message = textInput.value.trim();
+            if (message) {
+                processMessage(message);
+                textInput.value = '';
+            }
+        });
+
+        textInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && isConversationActive) {
+                sendBtn.click();
+            }
+        });
+
+        // Visual feedback para o file input
+        const fileLabel = document.getElementById('file-label');
+        fileLabel.addEventListener('click', () => {
+            keyFileInput.click();
+        });
+
+        // Inicialização
+        console.log('🚀 App ready! Model:', MODEL);
+        addMessage("📁 Please upload your key.txt file with your Google Gemini API key to begin.", false);
+    </script>
+</body>
 </html>
