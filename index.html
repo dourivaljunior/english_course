@@ -1,116 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>English Tutor - Debug Mode</title>
+    <title>Validador de Chave Gemini</title>
     <style>
-        :root { --bg: #0f172a; --accent: #38bdf8; --ai: #4ade80; --user: #f87171; }
-        body { font-family: sans-serif; background: var(--bg); color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: #1e293b; padding: 2rem; border-radius: 2rem; text-align: center; width: 90%; max-width: 400px; }
-        .avatar { width: 140px; height: 140px; margin: 0 auto 1rem; border-radius: 50%; border: 4px solid #334155; overflow: hidden; }
-        #avatar-img { width: 100%; height: 100%; object-fit: cover; }
-        .listening { border-color: var(--user); box-shadow: 0 0 15px var(--user); }
-        .speaking { border-color: var(--ai); box-shadow: 0 0 15px var(--ai); }
-        .btn { background: var(--accent); color: #0f172a; border: none; padding: 1rem; border-radius: 1rem; font-weight: bold; cursor: pointer; width: 100%; }
-        #log { margin-top: 1rem; font-size: 0.85rem; color: #94a3b8; text-align: left; background: #0f172a; padding: 10px; border-radius: 10px; }
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        #log { background: #eee; padding: 15px; border-radius: 5px; margin-top: 20px; white-space: pre-wrap; }
+        .error { color: red; }
+        .success { color: green; font-weight: bold; }
     </style>
 </head>
 <body>
+    <h2>Teste de Conexão Gemini</h2>
+    <p>1. Selecione seu arquivo <b>key.txt</b>:</p>
+    <input type="file" id="fileInput" accept=".txt">
+    <br><br>
+    <button id="testBtn">Testar Conexão Agora</button>
 
-<div class="card">
-    <div class="avatar" id="avatarUI">
-        <img id="avatar-img" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mario" alt="Tutor">
-    </div>
+    <div id="log">Aguardando arquivo...</div>
 
-    <input type="file" id="keyFile" accept=".txt" style="margin-bottom: 10px;">
-    <button id="mainBtn" class="btn">INICIAR CONVERSA</button>
-    
-    <div id="log">Aguardando arquivo key.txt...</div>
-</div>
+    <script>
+        let apiKey = "";
 
-<script>
-    let API_KEY = "";
-    let isRunning = false;
-    const log = document.getElementById('log');
-    const avatarUI = document.getElementById('avatarUI');
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = 'en-US';
-
-    document.getElementById('keyFile').onchange = (e) => {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            // O .trim() remove espaços e quebras de linha acidentais
-            API_KEY = ev.target.result.replace(/\s+/g, ''); 
-            log.innerText = "Chave carregada! Clique em Iniciar.";
+        document.getElementById('fileInput').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                apiKey = ev.target.result.trim().replace(/[\n\r\t\s]/g, "");
+                document.getElementById('log').innerText = "Chave carregada! Clique no botão para testar.";
+            };
+            reader.readAsText(e.target.files[0]);
         };
-        reader.readAsText(e.target.files[0]);
-    };
 
-    document.getElementById('mainBtn').onclick = () => {
-        if (!API_KEY) return alert("Selecione o arquivo .txt primeiro!");
-        isRunning = !isRunning;
-        document.getElementById('mainBtn').innerText = isRunning ? "PARAR" : "INICIAR";
-        if(isRunning) startListening();
-        else location.reload();
-    };
+        document.getElementById('testBtn').onclick = async () => {
+            if (!apiKey) return alert("Selecione o arquivo primeiro!");
+            
+            const log = document.getElementById('log');
+            log.innerHTML = "Enviando requisição de teste...";
 
-    function startListening() {
-        if (!isRunning) return;
-        try {
-            recognition.start();
-            avatarUI.className = "avatar listening";
-            log.innerText = "Listening...";
-        } catch (e) {}
-    }
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-    recognition.onresult = async (event) => {
-        const userText = event.results[0][0].transcript;
-        log.innerHTML = `<b>Você:</b> ${userText}`;
-        avatarUI.className = "avatar";
-        await fetchAI(userText);
-    };
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: "Diga apenas: A CONEXÃO FUNCIONOU" }]}]
+                    })
+                });
 
-    async function fetchAI(text) {
-        log.innerText = "Pensando...";
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-        
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: "Respond as an English tutor: " + text }]}]})
-            });
+                const data = await response.json();
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                // Aqui capturamos o erro real vindo do Google
-                const errorMsg = data.error ? data.error.message : "Erro desconhecido";
-                throw new Error(errorMsg);
+                if (response.ok) {
+                    const texto = data.candidates[0].content.parts[0].text;
+                    log.innerHTML = `<span class="success">SUCESSO!</span>\nResposta da IA: ${texto}`;
+                } else {
+                    log.innerHTML = `<span class="error">ERRO NA API:</span>\n${JSON.stringify(data.error, null, 2)}`;
+                }
+            } catch (err) {
+                log.innerHTML = `<span class="error">ERRO DE REDE/CORS:</span>\n${err.message}`;
             }
-
-            const aiReply = data.candidates[0].content.parts[0].text;
-            speak(aiReply);
-        } catch (err) {
-            log.innerHTML = `<span style="color:#f87171">Erro: ${err.message}</span>`;
-            console.error(err);
-        }
-    }
-
-    function speak(text) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
-        utterance.onstart = () => {
-            avatarUI.className = "avatar speaking";
-            log.innerHTML += `<br><b>AI:</b> ${text}`;
         };
-        utterance.onend = () => {
-            avatarUI.className = "avatar";
-            if (isRunning) setTimeout(startListening, 500);
-        };
-        window.speechSynthesis.speak(utterance);
-    }
-</script>
+    </script>
 </body>
 </html>
