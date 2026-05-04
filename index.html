@@ -1,1 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste de Fogo - Gemini 2.5 Flash</title>
+    <style>
+        body { font-family: sans-serif; background: #0f172a; color: white; padding: 20px; }
+        .box { max-width: 500px; margin: auto; background: #1e293b; padding: 20px; border-radius: 15px; border: 2px solid #38bdf8; }
+        #chat { height: 200px; overflow-y: auto; background: #000; padding: 10px; margin: 10px 0; border-radius: 8px; font-family: monospace; font-size: 0.9rem; }
+        button { background: #4ade80; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
+        input[type="text"] { width: 70%; padding: 8px; border-radius: 5px; border: none; }
+        .user { color: #38bdf8; }
+        .ai { color: #4ade80; }
+    </style>
+</head>
+<body>
 
+<div class="box">
+    <h3>Validação Gemini 2.5 Flash</h3>
+    <input type="file" id="keyFile" accept=".txt">
+    <hr>
+    <div id="chat">Aguardando chave e início...</div>
+    <input type="text" id="userInput" placeholder="Digite algo em inglês...">
+    <button id="sendBtn">ENVIAR TESTE</button>
+</div>
+
+<script>
+    let apiKey = "";
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('userInput');
+    const model = "gemini-2.5-flash"; // Único que funcionou
+
+    document.getElementById('keyFile').onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => apiKey = ev.target.result.trim().replace(/[\n\r\t\s]/g, "");
+        reader.readAsText(e.target.files[0]);
+    };
+
+    document.getElementById('sendBtn').onclick = async () => {
+        if (!apiKey) return alert("Selecione a chave!");
+        const text = input.value;
+        if (!text) return;
+
+        chat.innerHTML += `<div class="user">Você: ${text}</div>`;
+        input.value = "";
+        chat.innerHTML += `<div id="status">Mário pensando...</div>`;
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: "You are a teacher. Reply briefly: " + text }]}]
+                })
+            });
+
+            const data = await response.json();
+            document.getElementById('status').remove();
+
+            if (response.ok) {
+                const reply = data.candidates[0].content.parts[0].text;
+                chat.innerHTML += `<div class="ai">Mário: ${reply}</div>`;
+            } else {
+                chat.innerHTML += `<div style="color:red">ERRO: ${data.error.message}</div>`;
+            }
+        } catch (err) {
+            chat.innerHTML += `<div style="color:red">ERRO REDE: ${err.message}</div>`;
+        }
+        chat.scrollTop = chat.scrollHeight;
+    };
+</script>
+</body>
+</html>
