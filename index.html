@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>AI Avatar - Converse em Inglês</title>
+    <title>AI Avatar - Teste Local</title>
     <style>
         * {
             margin: 0;
@@ -45,7 +45,7 @@
             object-fit: cover;
             border: 4px solid white;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
+            cursor: pointer;
         }
 
         @keyframes speak {
@@ -87,24 +87,6 @@
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
-        }
-
-        .config-box {
-            background: #e8f4fd;
-            border: 1px solid #2196F3;
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 15px;
-            font-size: 13px;
-        }
-
-        .config-box input {
-            width: 100%;
-            padding: 8px;
-            margin-top: 8px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-family: monospace;
         }
 
         .chat-area {
@@ -164,7 +146,7 @@
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: transform 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -186,7 +168,7 @@
             color: white;
         }
 
-        button:active { transform: translateY(0); }
+        button:active { transform: scale(0.98); }
 
         .text-input {
             display: flex;
@@ -225,6 +207,16 @@
             100% { transform: rotate(360deg); }
         }
 
+        .info {
+            background: #e8f4fd;
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #0056b3;
+            text-align: center;
+        }
+
         @media (max-width: 600px) {
             .container { padding: 15px; }
             #avatar-img { width: 150px; height: 150px; }
@@ -242,16 +234,10 @@
             </div>
         </div>
 
-        <div class="config-box">
-            🔑 <strong>API Key do Google Gemini (gratuita)</strong><br>
-            <small>Obtenha em <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a></small>
-            <input type="password" id="api-key-input" placeholder="AIzaSyA-XrmUQwhEE3RkFy0GkXPu5LXoN6-_iXU" autocomplete="off">
-        </div>
-
         <div class="chat-area" id="chat-area">
             <div class="message ai">
                 <div class="message-content">
-                    👋 Hello! I'm Emma. Please enter your Google API Key above, then click the microphone and speak in English!
+                    👋 Hello! I'm Emma. Click the microphone and speak in English!
                 </div>
             </div>
         </div>
@@ -265,9 +251,20 @@
             <input type="text" id="text-input" placeholder="Or type your message in English...">
             <button id="send-btn">Send 📤</button>
         </div>
+
+        <div class="info">
+            🔧 Modo de teste local | A chave API está no código (seguro apenas para testes no seu PC)
+        </div>
     </div>
 
     <script>
+        // ============================================================
+        // COLE SUA CHAVE DA API DO GOOGLE GEMINI AQUI (teste local)
+        // Obtenha em: https://aistudio.google.com/apikey
+        // ============================================================
+        const GEMINI_API_KEY = 'AIzaSyA-XrmUQwhEE3RkFy0GkXPu5LXoN6-_iXU';  // ← SUBSTITUA PELA SUA CHAVE!
+        // ============================================================
+
         let isRecording = false;
         let recognition = null;
 
@@ -278,14 +275,11 @@
         const sendBtn = document.getElementById('send-btn');
         const textInput = document.getElementById('text-input');
         const chatArea = document.getElementById('chat-area');
-        const apiKeyInput = document.getElementById('api-key-input');
 
-        // Salvar API key no localStorage
-        const savedKey = localStorage.getItem('gemini_api_key');
-        if (savedKey) apiKeyInput.value = savedKey;
-        apiKeyInput.addEventListener('change', () => {
-            localStorage.setItem('gemini_api_key', apiKeyInput.value);
-        });
+        // Verificar se a chave foi configurada
+        if (GEMINI_API_KEY === 'COLE_SUA_CHAVE_AQUI') {
+            addMessage("⚠️ Please configure your Google API Key in the script. Get it from aistudio.google.com/apikey", false);
+        }
 
         function addMessage(text, isUser) {
             const messageDiv = document.createElement('div');
@@ -331,6 +325,7 @@
                     statusText.innerText = '💭 Thinking...';
                     break;
                 default:
+                    avatarImg.classList.remove('avatar-speaking', 'avatar-listening', 'avatar-thinking');
                     statusText.innerText = '✅ Ready';
             }
         }
@@ -353,20 +348,15 @@
             });
         }
 
-        // ============================================
-        // FUNÇÃO PRINCIPAL - API DO GOOGLE GEMINI
-        // Funciona diretamente do navegador!
-        // ============================================
+        // Chamada direta para API do Google Gemini (funciona localmente)
         async function callGeminiAI(message) {
-            const apiKey = apiKeyInput.value.trim();
-            
-            if (!apiKey) {
-                return "⚠️ Please enter your Google API Key in the blue box above. Get it for free at aistudio.google.com/apikey";
+            if (GEMINI_API_KEY === 'COLE_SUA_CHAVE_AQUI') {
+                return "⚠️ Please configure your Google API Key in the code first. Get it for free at aistudio.google.com/apikey";
             }
 
             try {
                 const response = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
                     {
                         method: 'POST',
                         headers: {
@@ -375,12 +365,12 @@
                         body: JSON.stringify({
                             contents: [{
                                 parts: [{
-                                    text: `You are Emma, a friendly English conversation partner. Keep responses short (1-2 sentences), natural, and helpful. Respond to this: ${message}`
+                                    text: `You are Emma, a friendly English conversation partner. Keep responses very short (1-2 sentences), natural, and helpful. Respond to this: ${message}`
                                 }]
                             }],
                             generationConfig: {
                                 temperature: 0.7,
-                                maxOutputTokens: 150
+                                maxOutputTokens: 100
                             }
                         })
                     }
@@ -393,7 +383,7 @@
                     if (response.status === 403 || response.status === 400) {
                         return "❌ Invalid API Key. Please check your key at aistudio.google.com/apikey";
                     }
-                    return `❌ API Error: ${errorData.error?.message || 'Unknown error'}`;
+                    return `❌ Error: ${errorData.error?.message || 'Unknown error'}`;
                 }
 
                 const data = await response.json();
@@ -402,7 +392,7 @@
                 if (reply) {
                     return reply;
                 }
-                return "I'm not sure how to respond to that. Could you say it differently?";
+                return "I'm not sure how to respond. Could you say that differently?";
 
             } catch (error) {
                 console.error('Network Error:', error);
@@ -427,7 +417,7 @@
 
         function setupSpeechRecognition() {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert('Your browser does not support speech recognition. Please use Chrome or Edge on mobile.');
+                addMessage("⚠️ Speech recognition not supported. Please use Chrome browser.", false);
                 recordBtn.disabled = true;
                 recordBtn.style.opacity = '0.5';
                 return;
@@ -465,12 +455,14 @@
                 recordBtn.innerHTML = '🎤 Speak Now';
                 recordBtn.classList.remove('recording');
                 animateAvatar('ready');
+                
                 if (event.error === 'not-allowed') {
-                    alert('Please allow microphone access.');
+                    addMessage("⚠️ Microphone access denied. Please allow microphone permissions.", false);
                 }
             };
         }
 
+        // Event listeners
         recordBtn.addEventListener('click', () => {
             if (recognition) {
                 if (isRecording) recognition.stop();
@@ -495,8 +487,9 @@
             addMessage("✨ Chat cleared! Ready to help you practice English.", false);
         });
         
+        // Inicializar
         setupSpeechRecognition();
-        console.log('🚀 App ready! Enter your Google API Key and start chatting!');
+        console.log('🚀 App ready!');
     </script>
 </body>
 </html>
