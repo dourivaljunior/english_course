@@ -3,149 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>English AI Tutor - Demo</title>
+    <title>AI English Tutor - Professional Edition</title>
     <style>
+        :root {
+            --primary: #4a90e2;
+            --secondary: #2c3e50;
+            --success: #27ae60;
+            --danger: #e74c3c;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #eef2f3;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
         }
-        .card {
+
+        .chat-card {
             background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            text-align: center;
+            width: 90%;
             max-width: 450px;
-            width: 100%;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            padding: 30px;
+            text-align: center;
         }
-        #avatar-container {
-            width: 150px;
-            height: 150px;
+
+        .avatar-wrapper {
+            position: relative;
+            width: 180px;
+            height: 180px;
             margin: 0 auto 20px;
-            background: #007bff;
+        }
+
+        #avatar-img {
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        /* Efeito de animação quando o avatar fala */
+        .speaking #avatar-img {
+            box-shadow: 0 0 0 8px rgba(74, 144, 226, 0.3);
+            transform: scale(1.05);
+        }
+
+        .status-dot {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            width: 20px;
+            height: 20px;
+            background: #ccc;
+            border: 3px solid white;
+            border-radius: 50%;
+        }
+
+        .listening .status-dot { background: var(--danger); animation: blink 1s infinite; }
+
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        .controls { margin-top: 25px; }
+
+        input#apiKey {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            gap: 10px;
         }
-        .speaking {
-            box-shadow: 0 0 20px #007bff;
-            animation: pulse 0.5s infinite;
+
+        .btn-start { background: var(--primary); color: white; }
+        .btn-stop { background: var(--secondary); color: white; }
+
+        #transcript-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            min-height: 60px;
+            font-size: 14px;
+            color: #444;
+            line-height: 1.5;
         }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.08); }
-            100% { transform: scale(1); }
-        }
-        svg { width: 80px; fill: white; }
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-        #log { margin-top: 20px; font-size: 14px; color: #555; border-top: 1px solid #eee; padding-top: 15px; }
+
+        .label { font-weight: bold; color: var(--primary); display: block; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>English Tutor AI</h2>
-    <p style="font-size: 0.8rem; color: #888;">Projeto Educacional</p>
-    
-    <div id="avatar-container">
-        <svg viewBox="0 0 24 24"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8 S16.41,20,12,20z M12,13c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,13,12,13z"/></svg>
+<div class="chat-card" id="mainContainer">
+    <div class="avatar-wrapper" id="visuals">
+        <img id="avatar-img" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4" alt="AI Tutor">
+        <div class="status-dot"></div>
     </div>
-    
+
     <input type="password" id="apiKey" placeholder="AIzaSyA-XrmUQwhEE3RkFy0GkXPu5LXoN6-_iXU">
-    <button id="talkBtn">Segurar para Falar (Inglês)</button>
     
-    <div id="log">Aguardando...</div>
+    <div class="controls">
+        <button id="toggleBtn" class="btn-start">Iniciar Conversa</button>
+    </div>
+
+    <div id="transcript-box">
+        <span class="label">Diálogo:</span>
+        <div id="msg">Clique no botão para começar a praticar.</div>
+    </div>
 </div>
 
 <script>
-    const talkBtn = document.getElementById('talkBtn');
-    const log = document.getElementById('log');
-    const avatar = document.getElementById('avatar-container');
-    const apiKeyField = document.getElementById('apiKey');
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition;
+    const toggleBtn = document.getElementById('toggleBtn');
+    const msg = document.getElementById('msg');
+    const visuals = document.getElementById('visuals');
+    const apiKeyInput = document.getElementById('apiKey');
     
-    if (SpeechRecognition) {
-        recognition = new SpeechRecognition();
+    let isConversing = false;
+    let recognition;
+
+    // Configuração do reconhecimento de voz
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
         recognition.lang = 'en-US';
-
-        talkBtn.onmousedown = () => {
-            if(!apiKeyField.value) return alert("Insira sua API Key!");
-            recognition.start();
-            log.innerText = "Ouvindo...";
-        };
-
-        talkBtn.onmouseup = () => {
-            recognition.stop();
-            log.innerText = "Processando...";
-        };
+        recognition.continuous = false; // Para processar frase por frase
+        recognition.interimResults = false;
 
         recognition.onresult = async (event) => {
-            const text = event.results[0][0].transcript;
-            log.innerHTML = "<b>Você:</b> " + text;
-            await askGemini(text);
+            const speechToText = event.results[0][0].transcript;
+            msg.innerHTML = `<strong>You:</strong> ${speechToText}`;
+            visuals.classList.remove('listening');
+            
+            await getAIResponse(speechToText);
+        };
+
+        recognition.onerror = (e) => {
+            console.error(e);
+            stopConversation();
+        };
+
+        recognition.onend = () => {
+            // Se ainda estiver no modo conversa e não estiver falando, volta a ouvir
+            if (isConversing && !window.speechSynthesis.speaking) {
+                recognition.start();
+                visuals.classList.add('listening');
+            }
         };
     }
 
-    async function askGemini(prompt) {
-        const key = apiKeyField.value;
+    toggleBtn.addEventListener('click', () => {
+        if (!isConversing) {
+            startConversation();
+        } else {
+            stopConversation();
+        }
+    });
+
+    function startConversation() {
+        if (!apiKeyInput.value) return alert("Por favor, cole sua API Key primeiro.");
+        isConversing = true;
+        toggleBtn.innerText = "Finalizar Conversa";
+        toggleBtn.className = "btn-stop";
+        visuals.classList.add('listening');
+        msg.innerText = "Estou ouvindo... Pode falar em inglês.";
+        recognition.start();
+    }
+
+    function stopConversation() {
+        isConversing = false;
+        toggleBtn.innerText = "Iniciar Conversa";
+        toggleBtn.className = "btn-start";
+        visuals.classList.remove('listening');
+        visuals.classList.remove('speaking');
+        window.speechSynthesis.cancel();
+        recognition.stop();
+        msg.innerText = "Conversa finalizada.";
+    }
+
+    async function getAIResponse(text) {
+        const key = apiKeyInput.value;
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
         
         try {
-            const resp = await fetch(url, {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: "You are a friendly English teacher. Answer briefly in English: " + prompt }]}]
+                    contents: [{ parts: [{ text: "You are a helpful English tutor. Respond to this student briefly and naturally in English: " + text }]}]
                 })
             });
-            const data = await resp.json();
-            const reply = data.candidates[0].content.parts[0].text;
-            speak(reply);
-        } catch (e) {
-            log.innerText = "Erro na API. Verifique sua chave.";
+            const data = await response.json();
+            const aiReply = data.candidates[0].content.parts[0].text;
+            
+            speak(aiReply);
+        } catch (error) {
+            msg.innerText = "Erro na conexão com a API.";
+            stopConversation();
         }
     }
 
     function speak(text) {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
-        utterance.onstart = () => avatar.classList.add('speaking');
-        utterance.onend = () => {
-            avatar.classList.remove('speaking');
-            log.innerHTML += "<br><b>Tutor:</b> " + text;
+
+        utterance.onstart = () => {
+            visuals.classList.add('speaking');
+            msg.innerHTML += `<br><strong>Tutor:</strong> ${text}`;
         };
+
+        utterance.onend = () => {
+            visuals.classList.remove('speaking');
+            if (isConversing) {
+                recognition.start(); // Volta a ouvir após terminar de falar
+                visuals.classList.add('listening');
+            }
+        };
+
         window.speechSynthesis.speak(utterance);
     }
 </script>
+
 </body>
 </html>
