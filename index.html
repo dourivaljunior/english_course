@@ -3,128 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>English Tutor - Local Key Security</title>
+    <title>English Tutor - Debug Mode</title>
     <style>
         :root { --bg: #0f172a; --accent: #38bdf8; --ai: #4ade80; --user: #f87171; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: #1e293b; padding: 2rem; border-radius: 2rem; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .avatar-circle { width: 160px; height: 160px; margin: 0 auto 1.5rem; border-radius: 50%; border: 4px solid #334155; overflow: hidden; transition: 0.3s; background: #0f172a; }
+        body { font-family: sans-serif; background: var(--bg); color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { background: #1e293b; padding: 2rem; border-radius: 2rem; text-align: center; width: 90%; max-width: 400px; }
+        .avatar { width: 140px; height: 140px; margin: 0 auto 1rem; border-radius: 50%; border: 4px solid #334155; overflow: hidden; }
         #avatar-img { width: 100%; height: 100%; object-fit: cover; }
-        .listening { border-color: var(--user); box-shadow: 0 0 20px var(--user); transform: scale(1.05); }
-        .speaking { border-color: var(--ai); box-shadow: 0 0 20px var(--ai); transform: scale(1.05); }
-        .btn-start { background: var(--accent); color: #0f172a; border: none; padding: 1rem; border-radius: 1rem; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%; margin-top: 1rem; }
-        #log { margin-top: 1.5rem; font-size: 0.9rem; color: #94a3b8; min-height: 50px; line-height: 1.4; }
-        .file-input-label { font-size: 0.8rem; color: #64748b; margin-bottom: 10px; display: block; }
-        input[type="file"] { font-size: 0.8rem; margin-bottom: 1rem; }
+        .listening { border-color: var(--user); box-shadow: 0 0 15px var(--user); }
+        .speaking { border-color: var(--ai); box-shadow: 0 0 15px var(--ai); }
+        .btn { background: var(--accent); color: #0f172a; border: none; padding: 1rem; border-radius: 1rem; font-weight: bold; cursor: pointer; width: 100%; }
+        #log { margin-top: 1rem; font-size: 0.85rem; color: #94a3b8; text-align: left; background: #0f172a; padding: 10px; border-radius: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <div class="avatar-circle" id="avatarUI">
+    <div class="avatar" id="avatarUI">
         <img id="avatar-img" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mario" alt="Tutor">
     </div>
 
-    <label class="file-input-label">Selecione seu arquivo key.txt com a API Key:</label>
-    <input type="file" id="keyFile" accept=".txt">
+    <input type="file" id="keyFile" accept=".txt" style="margin-bottom: 10px;">
+    <button id="mainBtn" class="btn">INICIAR CONVERSA</button>
     
-    <button id="mainBtn" class="btn-start">INICIAR AULA</button>
-    
-    <div id="log">Aguardando arquivo de chave...</div>
+    <div id="log">Aguardando arquivo key.txt...</div>
 </div>
 
 <script>
     let API_KEY = "";
     let isRunning = false;
-    const mainBtn = document.getElementById('mainBtn');
     const log = document.getElementById('log');
     const avatarUI = document.getElementById('avatarUI');
-    const fileInput = document.getElementById('keyFile');
-
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = 'en-US';
-    recognition.continuous = false;
 
-    // Lógica para ler o arquivo .txt local
-    fileInput.onchange = (e) => {
-        const file = e.target.files[0];
+    document.getElementById('keyFile').onchange = (e) => {
         const reader = new FileReader();
-        reader.onload = (event) => {
-            API_KEY = event.target.result.trim();
-            log.innerText = "Chave carregada com sucesso! Clique em Iniciar.";
+        reader.onload = (ev) => {
+            // O .trim() remove espaços e quebras de linha acidentais
+            API_KEY = ev.target.result.replace(/\s+/g, ''); 
+            log.innerText = "Chave carregada! Clique em Iniciar.";
         };
-        reader.readAsText(file);
+        reader.readAsText(e.target.files[0]);
     };
 
-    mainBtn.onclick = () => {
-        if (!API_KEY) return alert("Por favor, selecione o arquivo .txt com sua chave primeiro!");
-        
-        if (!isRunning) {
-            isRunning = true;
-            mainBtn.innerText = "FINALIZAR";
-            mainBtn.style.background = "#ef4444";
-            startListening();
-        } else {
-            location.reload();
-        }
+    document.getElementById('mainBtn').onclick = () => {
+        if (!API_KEY) return alert("Selecione o arquivo .txt primeiro!");
+        isRunning = !isRunning;
+        document.getElementById('mainBtn').innerText = isRunning ? "PARAR" : "INICIAR";
+        if(isRunning) startListening();
+        else location.reload();
     };
 
     function startListening() {
         if (!isRunning) return;
         try {
             recognition.start();
-            avatarUI.className = "avatar-circle listening";
-            log.innerText = "Ouvindo... Pode falar em inglês.";
+            avatarUI.className = "avatar listening";
+            log.innerText = "Listening...";
         } catch (e) {}
     }
 
     recognition.onresult = async (event) => {
         const userText = event.results[0][0].transcript;
         log.innerHTML = `<b>Você:</b> ${userText}`;
-        avatarUI.className = "avatar-circle";
-        
+        avatarUI.className = "avatar";
         await fetchAI(userText);
     };
 
     async function fetchAI(text) {
+        log.innerText = "Pensando...";
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
         
         try {
             const response = await fetch(url, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: "You are a friendly English teacher. Reply to this briefly in English: " + text }]}]
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: "Respond as an English tutor: " + text }]}]})
             });
+
             const data = await response.json();
+
+            if (!response.ok) {
+                // Aqui capturamos o erro real vindo do Google
+                const errorMsg = data.error ? data.error.message : "Erro desconhecido";
+                throw new Error(errorMsg);
+            }
+
             const aiReply = data.candidates[0].content.parts[0].text;
             speak(aiReply);
         } catch (err) {
-            log.innerText = "Erro na API. Verifique se a chave no arquivo está correta.";
+            log.innerHTML = `<span style="color:#f87171">Erro: ${err.message}</span>`;
+            console.error(err);
         }
     }
 
     function speak(text) {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
-
         utterance.onstart = () => {
-            avatarUI.className = "avatar-circle speaking";
-            log.innerHTML += `<br><b>Tutor:</b> ${text}`;
+            avatarUI.className = "avatar speaking";
+            log.innerHTML += `<br><b>AI:</b> ${text}`;
         };
-
         utterance.onend = () => {
-            avatarUI.className = "avatar-circle";
-            if (isRunning) setTimeout(startListening, 600); // Loop de interação
+            avatarUI.className = "avatar";
+            if (isRunning) setTimeout(startListening, 500);
         };
-
         window.speechSynthesis.speak(utterance);
     }
-
-    recognition.onend = () => {
-        if (isRunning && avatarUI.className.includes("listening")) startListening();
-    };
 </script>
 </body>
 </html>
