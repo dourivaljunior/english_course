@@ -20,5 +20,105 @@
 </head>
 <body>
 
+<div class="container">
+    <div class="avatar-box" id="avatarUI">
+        <img id="avatar-img" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mario" alt="Mario">
+    </div>
+    <input type="file" id="keyFile" accept=".txt" style="margin-bottom: 15px; font-size: 0.8rem; width: 100%;">
+    <div class="controls">
+        <button id="startBtn">START GROQ</button>
+        <button id="stopBtn">STOP</button>
+    </div>
+    <div id="display-text">Load Groq Key to begin...</div>
+</div>
+
+<script>
+    let GROQ_KEY = "";
+    let isRunning = false;
+
+    const startBtn = document.getElementById('startBtn');
+    const displayText = document.getElementById('display-text');
+    const avatarUI = document.getElementById('avatarUI');
+    const keyFile = document.getElementById('keyFile');
+
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-US';
+
+    keyFile.onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            GROQ_KEY = ev.target.result.trim().replace(/[\n\r\t\s]/g, "");
+            displayText.innerText = "Groq Key Loaded!";
+        };
+        reader.readAsText(e.target.files[0]);
+    };
+
+    startBtn.onclick = () => {
+        if (!GROQ_KEY) return alert("Select your Groq key.txt!");
+        isRunning = true;
+        startBtn.style.opacity = "0.5";
+        listen();
+    };
+
+    document.getElementById('stopBtn').onclick = () => location.reload();
+
+    function listen() {
+        if (!isRunning) return;
+        try {
+            recognition.start();
+            avatarUI.className = "avatar-box listening";
+            displayText.innerHTML = "<b>Listening...</b>";
+        } catch (e) {}
+    }
+
+    recognition.onresult = async (event) => {
+        const userSpeech = event.results[0][0].transcript;
+        displayText.innerHTML = `<b>You:</b> ${userSpeech}`;
+        avatarUI.className = "avatar-box";
+        await askGroq(userSpeech);
+    };
+
+    async function askGroq(text) {
+        displayText.innerHTML = "<b>Groq is thinking...</b>";
+        
+        try {
+            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${GROQ_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "llama-3.3-70b-versatile", // Modelo ultra rápido e inteligente
+                    messages: [
+                        { role: "system", content: "You are Mario, a friendly English teacher. Short answers only." },
+                        { role: "user", content: text }
+                    ],
+                    temperature: 0.7
+                })
+            });
+
+            const data = await response.json();
+            const aiReply = data.choices[0].message.content;
+            speak(aiReply);
+        } catch (err) {
+            displayText.innerHTML = `Error: ${err.message}`;
+        }
+    }
+
+    function speak(text) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.onstart = () => {
+            avatarUI.className = "avatar-box speaking";
+            displayText.innerHTML = `<b>Mário:</b> ${text}`;
+        };
+        utterance.onend = () => {
+            avatarUI.className = "avatar-box";
+            if (isRunning) setTimeout(listen, 400);
+        };
+        window.speechSynthesis.speak(utterance);
+    }
+</script>
 </body>
 </html>
