@@ -217,6 +217,17 @@
             text-align: center;
         }
 
+        .error-banner {
+            background: #fee2e2;
+            border-left: 4px solid #dc2626;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #991b1b;
+            display: none;
+        }
+
         @media (max-width: 600px) {
             .container { padding: 15px; }
             #avatar-img { width: 150px; height: 150px; }
@@ -232,6 +243,10 @@
                 <span class="status-indicator"></span>
                 <span id="status-text">Pronto para conversar</span>
             </div>
+        </div>
+
+        <div class="error-banner" id="error-banner">
+            ⚠️ <span id="error-message"></span>
         </div>
 
         <div class="chat-area" id="chat-area">
@@ -253,31 +268,32 @@
         </div>
 
         <div class="info">
-            🔧 Usando modelo Gemini 2.0 Flash (gratuito e atualizado)
+            🔧 Usando auto-descoberta de modelos | <span id="model-status">Detectando modelo disponível...</span>
         </div>
     </div>
 
     <script>
         // ============================================================
-        // COLE SUA CHAVE DA API DO GOOGLE GEMINI AQUI
+        // COLE SUA CHAVE DA API DO GOOGLE AQUI
         // Obtenha em: https://aistudio.google.com/apikey
         // ============================================================
         const GEMINI_API_KEY = 'AIzaSyA-XrmUQwhEE3RkFy0GkXPu5LXoN6-_iXU';
         
-        // MODELOS CORRETOS E FUNCIONAIS (verificados em maio 2026)
+        // Modelos que o Google disponibiliza para novas contas (Março 2026)
         // Fonte: https://ai.google.dev/gemini-api/docs/models
-        const GEMINI_MODELS = {
-            FAST: 'gemini-2.0-flash',      // Rápido e gratuito
-            LITE: 'gemini-2.0-flash-lite', // Mais leve
-            PRO: 'gemini-2.5-pro'          // Mais potente
-        };
+        const CANDIDATE_MODELS = [
+            'gemini-2.5-flash',           // Mais recente, recomendado pelo Google
+            'gemini-2.5-flash-lite',      // Versão mais leve
+            'gemini-2.5-pro',             // Mais potente (pode ter limites)
+            'gemini-3.1-flash-preview',   // Prévia da versão 3.1
+            'gemini-3.1-flash-lite-preview' // Versão leve da 3.1
+        ];
         
-        // Usando o modelo rápido como padrão
-        let currentModel = GEMINI_MODELS.FAST;
-        // ============================================================
-
+        let activeModel = null;
+        let modelDetectionComplete = false;
         let isRecording = false;
         let recognition = null;
+        let conversationHistory = [];
 
         const avatarImg = document.getElementById('avatar-img');
         const statusText = document.getElementById('status-text');
@@ -286,9 +302,16 @@
         const sendBtn = document.getElementById('send-btn');
         const textInput = document.getElementById('text-input');
         const chatArea = document.getElementById('chat-area');
+        const errorBanner = document.getElementById('error-banner');
+        const errorMessageSpan = document.getElementById('error-message');
+        const modelStatusSpan = document.getElementById('model-status');
 
-        if (GEMINI_API_KEY === 'AIzaSyA-XrmUQwhEE3RkFy0GkXPu5LXoN6-_iXU') {
-            addMessage("⚠️ Please configure your Google API Key. Get it from aistudio.google.com/apikey", false);
+        function showError(message) {
+            errorMessageSpan.textContent = message;
+            errorBanner.style.display = 'block';
+            setTimeout(() => {
+                errorBanner.style.display = 'none';
+            }, 8000);
         }
 
         function addMessage(text, isUser) {
@@ -358,75 +381,168 @@
         }
 
         // ============================================================
-        // FUNÇÃO CORRIGIDA - usando os modelos corretos
+        // FUNÇÃO PARA DETECTAR MODELO DISPONÍVEL
+        // Chama a API ListModels do Google para descobrir o que funciona
+        // ============================================================
+        async function detectAvailableModel() {
+            if (GEMINI_API_KEY === 'COLE_SUA_CHAVE_AQUI') {
+                modelStatusSpan.textContent = '⚠️ Configure sua chave API';
+                return null;
+            }
+
+            modelStatusSpan.textContent = '🔍 Detectando modelo disponível...';
+            
+            // Primeiro, vamos tentar listar os modelos via API (melhor método)
+            try {
+                const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`;
+                const response = await fetch(listUrl);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const availableModels = data.models || [];
+                    
+                    // Filtra modelos que suportam generateContent
+                    const validModels = availableModels.filter(m => 
+                        m.supportedActions?.includes('generateContent') &&
+                        !m.name.includes('1.5') &&  // Exclui 1.5 (descontinuado)
+                        !m.name.includes('2.0')     // Exclui 2.0 (bloqueado para novos usuários)
+                    );
+                    
+                    if (validModels.length > 0) {
+                        // Pega o modelo mais recente (geralmente o primeiro)
+                        const bestModel = validModels[0].name;
+                        modelStatusSpan.textContent = `✅ Usando ${bestModel}`;
+                        console.log('Modelos disponíveis via API:', validModels.map(m => m.name));
+                        return bestModel;
+                    }
+                }
+            } catch (error) {
+                console.warn('ListModels falhou, tentando fallback manual:', error);
+            }
+            
+            // Fallback: testar modelos manualmente (se ListModels falhar)
+            for (const model of CANDIDATE_MODELS) {
+                try {
+                    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+                    const testResponse = await fetch(testUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: "Say 'OK' if you can hear me." }] }],
+                            generationConfig: { maxOutputTokens: 10 }
+                        })
+                    });
+                    
+                    if (testResponse.ok) {
+                        modelStatusSpan.textContent = `✅ Usando ${model}`;
+                        console.log(`Modelo encontrado: ${model}`);
+                        return model;
+                    }
+                    
+                    const errorData = await testResponse.json();
+                    console.log(`Modelo ${model} falhou:`, errorData.error?.message);
+                    
+                } catch (error) {
+                    console.log(`Erro ao testar ${model}:`, error.message);
+                }
+            }
+            
+            modelStatusSpan.textContent = '❌ Nenhum modelo disponível';
+            showError('Nenhum modelo Gemini disponível para sua conta. Verifique sua chave API em aistudio.google.com');
+            return null;
+        }
+
+        // ============================================================
+        // FUNÇÃO PRINCIPAL - USANDO O MODELO DETECTADO
         // ============================================================
         async function callGeminiAI(message) {
             if (GEMINI_API_KEY === 'COLE_SUA_CHAVE_AQUI') {
                 return "⚠️ Please configure your Google API Key first. Get it for free at aistudio.google.com/apikey";
             }
-
-            // Array de modelos para tentar (fallback automático)
-            const modelsToTry = [
-                GEMINI_MODELS.FAST,
-                GEMINI_MODELS.LITE,
-                GEMINI_MODELS.PRO
-            ];
             
-            let lastError = null;
+            // Se ainda não detectou o modelo, tenta detectar
+            if (!activeModel && !modelDetectionComplete) {
+                activeModel = await detectAvailableModel();
+                modelDetectionComplete = true;
+            }
             
-            for (const model of modelsToTry) {
-                try {
-                    // URL CORRETA: /v1beta/models/{NOME_DO_MODELO}:generateContent
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-                    
-                    console.log(`📡 Tentando modelo: ${model}`);
-                    
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [{
-                                    text: `You are Emma, a friendly English conversation partner. Keep responses VERY SHORT (maximum 2 sentences). Be natural and helpful. Respond to this: ${message}`
-                                }]
-                            }],
-                            generationConfig: {
-                                temperature: 0.7,
-                                maxOutputTokens: 100,
-                                topP: 0.9
-                            }
-                        })
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log(`✅ Modelo ${model} funcionou!`);
-                        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                        if (reply) {
-                            currentModel = model;
-                            return reply;
+            if (!activeModel) {
+                return "⚠️ No AI model available. Please check your API key at aistudio.google.com";
+            }
+            
+            // Adiciona à história da conversa para contexto
+            conversationHistory.push({ role: "user", parts: [{ text: message }] });
+            
+            // Mantém apenas as últimas 10 mensagens para não exceder limite
+            if (conversationHistory.length > 10) {
+                conversationHistory = conversationHistory.slice(-10);
+            }
+            
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${GEMINI_API_KEY}`;
+                
+                console.log(`📡 Usando modelo: ${activeModel}`);
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `You are Emma, a friendly English conversation partner. Keep responses VERY SHORT (maximum 2 sentences). Be natural and helpful. Respond to this: ${message}`
+                            }]
+                        }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            maxOutputTokens: 100,
+                            topP: 0.9
                         }
-                        return "I'm not sure how to respond. Could you say that differently?";
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const errorMsg = errorData.error?.message || '';
+                    
+                    console.error('API Error:', response.status, errorMsg);
+                    
+                    // Se o modelo falhou, tenta redetetar
+                    if (errorMsg.includes('no longer available') || errorMsg.includes('not found')) {
+                        console.log('Modelo expirou, redetectando...');
+                        activeModel = null;
+                        modelDetectionComplete = false;
+                        activeModel = await detectAvailableModel();
+                        
+                        if (activeModel) {
+                            // Tenta novamente com o novo modelo
+                            return callGeminiAI(message);
+                        }
                     }
                     
-                    const errorData = await response.json();
-                    console.warn(`❌ Modelo ${model} falhou:`, errorData.error?.message);
-                    lastError = errorData.error?.message;
+                    if (errorMsg.includes('API key')) {
+                        return "❌ Invalid API Key. Please check your key at aistudio.google.com/apikey";
+                    }
                     
-                } catch (error) {
-                    console.warn(`❌ Modelo ${model} erro de rede:`, error.message);
-                    lastError = error.message;
+                    return `⚠️ Error: ${errorMsg || 'AI service unavailable'}`;
                 }
+
+                const data = await response.json();
+                const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (reply) {
+                    // Adiciona resposta à história
+                    conversationHistory.push({ role: "model", parts: [{ text: reply }] });
+                    return reply;
+                }
+                
+                return "I'm not sure how to respond. Could you say that differently?";
+
+            } catch (error) {
+                console.error('Network Error:', error);
+                return "⚠️ Network error. Please check your internet connection.";
             }
-            
-            // Se todos os modelos falharam
-            if (lastError?.includes('API key')) {
-                return "❌ Invalid API Key. Please check your key at aistudio.google.com/apikey";
-            }
-            
-            return "⚠️ AI service temporarily unavailable. Please try again in a moment.";
         }
 
         async function processMessage(userMessage) {
@@ -488,6 +604,28 @@
             };
         }
 
+        // Inicialização
+        async function init() {
+            setupSpeechRecognition();
+            
+            if (GEMINI_API_KEY !== 'COLE_SUA_CHAVE_AQUI') {
+                // Tenta detectar o modelo na inicialização
+                activeModel = await detectAvailableModel();
+                modelDetectionComplete = true;
+                
+                if (activeModel) {
+                    addMessage(`✨ Connected! Using model: ${activeModel}. You can now speak in English!`, false);
+                } else {
+                    addMessage("⚠️ Could not detect any available AI model. Please check your API key.", false);
+                }
+            } else {
+                addMessage("⚠️ Please configure your Google API Key. Get it from aistudio.google.com/apikey", false);
+            }
+            
+            console.log('🚀 App ready!');
+        }
+        
+        // Event listeners
         recordBtn.addEventListener('click', () => {
             if (recognition) {
                 if (isRecording) recognition.stop();
@@ -509,11 +647,11 @@
         
         clearBtn.addEventListener('click', () => {
             chatArea.innerHTML = '';
+            conversationHistory = [];
             addMessage("✨ Chat cleared! Ready to help you practice English.", false);
         });
         
-        setupSpeechRecognition();
-        console.log('🚀 App ready! Modelos disponíveis:', GEMINI_MODELS);
+        init();
     </script>
 </body>
 </html>
