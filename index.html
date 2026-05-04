@@ -3,114 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>English Tutor AI - Demo</title>
+    <title>English Tutor AI - Fixed</title>
     <style>
-        :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --accent: #38bdf8;
-            --user: #f87171;
-            --ai: #4ade80;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        .container {
-            background: var(--card);
-            padding: 2.5rem;
-            border-radius: 2rem;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            text-align: center;
-            width: 90%;
-            max-width: 400px;
-        }
-
-        .avatar-wrap {
-            width: 180px;
-            height: 180px;
-            margin: 0 auto 2rem;
-            border-radius: 50%;
-            border: 4px solid #334155;
-            position: relative;
-            transition: all 0.4s ease;
-            background: #0f172a;
-            overflow: hidden;
-        }
-
+        :root { --bg: #0f172a; --card: #1e293b; --accent: #38bdf8; --user: #f87171; --ai: #4ade80; }
+        body { font-family: sans-serif; background: var(--bg); color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { background: var(--card); padding: 2rem; border-radius: 2rem; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .avatar-wrap { width: 150px; height: 150px; margin: 0 auto 1.5rem; border-radius: 50%; border: 4px solid #334155; overflow: hidden; transition: 0.3s; }
         #avatar-img { width: 100%; height: 100%; object-fit: cover; }
-
-        /* Estados visuais do Avatar */
-        .listening { border-color: var(--user); box-shadow: 0 0 25px var(--user); transform: scale(1.05); }
-        .speaking { border-color: var(--ai); box-shadow: 0 0 25px var(--ai); animation: talk-glow 1s infinite; }
-        .thinking { opacity: 0.5; filter: grayscale(1); }
-
-        @keyframes talk-glow { 50% { opacity: 0.7; transform: scale(1.02); } }
-
-        .btn-main {
-            background: var(--accent);
-            color: #0f172a;
-            border: none;
-            padding: 1.2rem;
-            border-radius: 1rem;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            transition: 0.3s;
-        }
-
-        .btn-main.active { background: #ef4444; color: white; }
-
-        #output-text {
-            margin-top: 1.5rem;
-            min-height: 60px;
-            font-size: 0.95rem;
-            color: #94a3b8;
-            line-height: 1.4;
-        }
+        .listening { border-color: var(--user); box-shadow: 0 0 20px var(--user); }
+        .speaking { border-color: var(--ai); box-shadow: 0 0 20px var(--ai); }
+        .btn-main { background: var(--accent); color: #0f172a; border: none; padding: 1rem; border-radius: 1rem; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%; }
+        #output-text { margin-top: 1.5rem; font-size: 0.9rem; color: #94a3b8; min-height: 40px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="avatar-wrap" id="avatarBox">
-        <img id="avatar-img" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mário&backgroundColor=b6e3f4" alt="AI Avatar">
+        <img id="avatar-img" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mario" alt="AI">
     </div>
-
     <button id="sessionBtn" class="btn-main">START CLASS</button>
-    
-    <div id="output-text">Click the button to start our English conversation.</div>
+    <div id="output-text">Click to start conversation</div>
 </div>
 
 <script>
-    // API Key inserida diretamente conforme solicitado
-    const API_KEY = "AIzaSyA-XrmUQwhEE3RkFy0GkXPu5LXoN6-_iXU";
+    // A chave abaixo provavelmente será desativada pelo Google por estar no GitHub.
+    // Se o erro persistir, o app pedirá uma nova chave e salvará no seu navegador.
+    let API_KEY = "AIzaSyA-XrmUQwhEE3RkFy0GkXPu5LXoN6-_iXU";
     
     const sessionBtn = document.getElementById('sessionBtn');
     const outputText = document.getElementById('output-text');
     const avatarBox = document.getElementById('avatarBox');
 
     let isRunning = false;
-    const speech = window.speechSynthesis;
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    
     recognition.lang = 'en-US';
-    recognition.continuous = false;
 
     sessionBtn.onclick = () => {
         if (!isRunning) {
             isRunning = true;
-            sessionBtn.innerText = "STOP SESSION";
-            sessionBtn.classList.add('active');
+            sessionBtn.innerText = "STOP";
             startListening();
         } else {
             location.reload();
@@ -122,63 +54,57 @@
         try {
             recognition.start();
             avatarBox.className = "avatar-wrap listening";
-            outputText.innerText = "Listening... I'm all ears!";
+            outputText.innerText = "Listening...";
         } catch (e) {}
     }
 
     recognition.onresult = async (event) => {
-        const userText = event.results[0][0].transcript;
-        outputText.innerHTML = `<b>You:</b> ${userText}`;
-        avatarBox.className = "avatar-wrap thinking";
-        
-        await fetchAIResponse(userText);
+        const text = event.results[0][0].transcript;
+        outputText.innerHTML = `<b>You:</b> ${text}`;
+        await fetchAI(text);
     };
 
-    async function fetchAIResponse(prompt) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    async function fetchAI(prompt) {
+        // Tenta usar a chave salva localmente primeiro (caso a do código tenha sido banida)
+        const activeKey = localStorage.getItem('user_gemini_key') || API_KEY;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`;
         
         try {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: "You are a friendly and interactive English teacher named Mário. Answer this briefly in English to continue the conversation: " + prompt }]}]
+                    contents: [{ parts: [{ text: "You are an English teacher. Reply briefly in English: " + prompt }]}]
                 })
             });
+            
+            if (!response.ok) throw new Error();
+
             const data = await response.json();
-            const aiText = data.candidates[0].content.parts[0].text;
-            triggerSpeech(aiText);
+            speak(data.candidates[0].content.parts[0].text);
         } catch (err) {
-            outputText.innerText = "Connection Error. Please check the API status.";
-            isRunning = false;
+            // Se der erro de conexão (chave banida), pede uma nova chave
+            const newKey = prompt("A chave de API foi bloqueada pelo Google por segurança. Cole sua chave novamente aqui para continuar:");
+            if (newKey) {
+                localStorage.setItem('user_gemini_key', newKey);
+                fetchAI(prompt);
+            }
         }
     }
 
-    function triggerSpeech(text) {
+    function speak(text) {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
-
         utterance.onstart = () => {
             avatarBox.className = "avatar-wrap speaking";
-            outputText.innerHTML += `<br><b>Mário:</b> ${text}`;
+            outputText.innerHTML += `<br><b>AI:</b> ${text}`;
         };
-
         utterance.onend = () => {
             avatarBox.className = "avatar-wrap";
-            // Reinicia a escuta automaticamente para interação contínua
             if (isRunning) setTimeout(startListening, 500);
         };
-
-        speech.speak(utterance);
+        window.speechSynthesis.speak(utterance);
     }
-
-    // Garante que o reconhecimento reinicie se falhar ou houver silêncio longo
-    recognition.onend = () => {
-        if (isRunning && avatarBox.className.includes("listening")) {
-            startListening();
-        }
-    };
 </script>
-
 </body>
 </html>
