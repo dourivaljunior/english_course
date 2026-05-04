@@ -3,245 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI English Tutor - Professional Edition</title>
+    <title>AI English Tutor - Automático</title>
     <style>
-        :root {
-            --primary: #4a90e2;
-            --secondary: #2c3e50;
-            --success: #27ae60;
-            --danger: #e74c3c;
-        }
-
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #121212;
+            color: white;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
+            height: 100vh;
             margin: 0;
+            overflow: hidden;
         }
 
-        .chat-card {
-            background: white;
-            width: 90%;
-            max-width: 450px;
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-            padding: 30px;
+        .container {
             text-align: center;
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
         }
 
-        .avatar-wrapper {
+        .avatar-box {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 30px;
             position: relative;
-            width: 180px;
-            height: 180px;
-            margin: 0 auto 20px;
         }
 
         #avatar-img {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid white;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            border: 5px solid #333;
+            transition: all 0.3s;
         }
 
-        /* Efeito de animação quando o avatar fala */
-        .speaking #avatar-img {
-            box-shadow: 0 0 0 8px rgba(74, 144, 226, 0.3);
+        /* Efeito de pulso quando a IA fala */
+        .ai-speaking #avatar-img {
+            border-color: #00e676;
             transform: scale(1.05);
+            box-shadow: 0 0 20px #00e676;
         }
 
-        .status-dot {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
-            width: 20px;
-            height: 20px;
-            background: #ccc;
-            border: 3px solid white;
-            border-radius: 50%;
+        /* Efeito quando o microfone está ouvindo */
+        .user-listening #avatar-img {
+            border-color: #2979ff;
+            box-shadow: 0 0 20px #2979ff;
         }
 
-        .listening .status-dot { background: var(--danger); animation: blink 1s infinite; }
-
-        @keyframes blink { 50% { opacity: 0.5; } }
-
-        .controls { margin-top: 25px; }
-
-        input#apiKey {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            font-size: 14px;
-            text-align: center;
-        }
-
-        button {
-            width: 100%;
-            padding: 16px;
+        .btn-control {
+            background: #00e676;
+            color: black;
             border: none;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 18px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,230,118,0.3);
+            transition: 0.2s;
         }
 
-        .btn-start { background: var(--primary); color: white; }
-        .btn-stop { background: var(--secondary); color: white; }
+        .btn-control.active {
+            background: #ff5252;
+            color: white;
+        }
 
-        #transcript-box {
+        #status-text {
             margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            min-height: 60px;
-            font-size: 14px;
-            color: #444;
-            line-height: 1.5;
+            height: 60px;
+            font-style: italic;
+            color: #bbb;
         }
-
-        .label { font-weight: bold; color: var(--primary); display: block; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
-<div class="chat-card" id="mainContainer">
-    <div class="avatar-wrapper" id="visuals">
-        <img id="avatar-img" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4" alt="AI Tutor">
-        <div class="status-dot"></div>
+<div class="container">
+    <div class="avatar-box" id="avatarContainer">
+        <img id="avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=Mario&backgroundColor=2979ff" alt="Avatar">
     </div>
 
-    <input type="password" id="apiKey" placeholder="AIzaSyA-XrmUQwhEE3RkFy0GkXPu5LXoN6-_iXU">
+    <button id="mainBtn" class="btn-control">Iniciar Conversa</button>
     
-    <div class="controls">
-        <button id="toggleBtn" class="btn-start">Iniciar Conversa</button>
-    </div>
-
-    <div id="transcript-box">
-        <span class="label">Diálogo:</span>
-        <div id="msg">Clique no botão para começar a praticar.</div>
-    </div>
+    <div id="status-text">Pressione o botão para começar</div>
 </div>
 
 <script>
-    const toggleBtn = document.getElementById('toggleBtn');
-    const msg = document.getElementById('msg');
-    const visuals = document.getElementById('visuals');
-    const apiKeyInput = document.getElementById('apiKey');
+    // COLOQUE SUA CHAVE AQUI DENTRO DAS ASPAS
+    const MINHA_CHAVE_API = "AIzaSyA-XrmUQwhEE3RkFy0GkXPu5LXoN6-_iXU"; 
+
+    const mainBtn = document.getElementById('mainBtn');
+    const statusText = document.getElementById('status-text');
+    const avatarContainer = document.getElementById('avatarContainer');
     
-    let isConversing = false;
-    let recognition;
+    let isActive = false;
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
 
-    // Configuração do reconhecimento de voz
-    if ('webkitSpeechRecognition' in window) {
-        recognition = new webkitSpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.continuous = false; // Para processar frase por frase
-        recognition.interimResults = false;
-
-        recognition.onresult = async (event) => {
-            const speechToText = event.results[0][0].transcript;
-            msg.innerHTML = `<strong>You:</strong> ${speechToText}`;
-            visuals.classList.remove('listening');
-            
-            await getAIResponse(speechToText);
-        };
-
-        recognition.onerror = (e) => {
-            console.error(e);
-            stopConversation();
-        };
-
-        recognition.onend = () => {
-            // Se ainda estiver no modo conversa e não estiver falando, volta a ouvir
-            if (isConversing && !window.speechSynthesis.speaking) {
-                recognition.start();
-                visuals.classList.add('listening');
-            }
-        };
-    }
-
-    toggleBtn.addEventListener('click', () => {
-        if (!isConversing) {
-            startConversation();
+    // Iniciar ou parar tudo
+    mainBtn.onclick = () => {
+        if (!isActive) {
+            isActive = true;
+            mainBtn.innerText = "Finalizar Conversa";
+            mainBtn.classList.add('active');
+            startListening();
         } else {
-            stopConversation();
+            location.reload(); // Reinicia a página para parar tudo limpamente
         }
-    });
+    };
 
-    function startConversation() {
-        if (!apiKeyInput.value) return alert("Por favor, cole sua API Key primeiro.");
-        isConversing = true;
-        toggleBtn.innerText = "Finalizar Conversa";
-        toggleBtn.className = "btn-stop";
-        visuals.classList.add('listening');
-        msg.innerText = "Estou ouvindo... Pode falar em inglês.";
-        recognition.start();
+    function startListening() {
+        if (!isActive) return;
+        
+        try {
+            recognition.start();
+            statusText.innerText = "Listening... Speak now!";
+            avatarContainer.className = "avatar-box user-listening";
+        } catch (e) {
+            console.log("Reconhecimento já ativo");
+        }
     }
 
-    function stopConversation() {
-        isConversing = false;
-        toggleBtn.innerText = "Iniciar Conversa";
-        toggleBtn.className = "btn-start";
-        visuals.classList.remove('listening');
-        visuals.classList.remove('speaking');
-        window.speechSynthesis.cancel();
-        recognition.stop();
-        msg.innerText = "Conversa finalizada.";
-    }
+    recognition.onresult = async (event) => {
+        const voiceText = event.results[0][0].transcript;
+        statusText.innerText = "You said: " + voiceText;
+        avatarContainer.className = "avatar-box";
+        
+        await callGemini(voiceText);
+    };
 
-    async function getAIResponse(text) {
-        const key = apiKeyInput.value;
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+    async function callGemini(userInput) {
+        statusText.innerText = "Thinking...";
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${MINHA_CHAVE_API}`;
         
         try {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: "You are a helpful English tutor. Respond to this student briefly and naturally in English: " + text }]}]
+                    contents: [{ parts: [{ text: "You are an English teacher. Reply to this in English, very briefly and naturally: " + userInput }]}]
                 })
             });
             const data = await response.json();
-            const aiReply = data.candidates[0].content.parts[0].text;
+            const reply = data.candidates[0].content.parts[0].text;
             
-            speak(aiReply);
-        } catch (error) {
-            msg.innerText = "Erro na conexão com a API.";
-            stopConversation();
+            speak(reply);
+        } catch (err) {
+            statusText.innerText = "API Error. Check your Key.";
+            isActive = false;
         }
     }
 
     function speak(text) {
+        const synth = window.speechSynthesis;
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
 
         utterance.onstart = () => {
-            visuals.classList.add('speaking');
-            msg.innerHTML += `<br><strong>Tutor:</strong> ${text}`;
+            avatarContainer.className = "avatar-box ai-speaking";
+            statusText.innerText = "Tutor: " + text;
         };
 
         utterance.onend = () => {
-            visuals.classList.remove('speaking');
-            if (isConversing) {
-                recognition.start(); // Volta a ouvir após terminar de falar
-                visuals.classList.add('listening');
+            avatarContainer.className = "avatar-box";
+            // A mágica: assim que a IA termina de falar, ela volta a ouvir o aluno
+            if (isActive) {
+                setTimeout(startListening, 500); 
             }
         };
 
-        window.speechSynthesis.speak(utterance);
+        synth.speak(utterance);
     }
+
+    // Se o reconhecimento parar sozinho sem resultado, tenta ouvir de novo se estiver ativo
+    recognition.onend = () => {
+        if (isActive && avatarContainer.className !== "avatar-box ai-speaking") {
+            startListening();
+        }
+    };
 </script>
 
 </body>
